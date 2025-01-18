@@ -1,0 +1,25 @@
+cabal-version:       2.4
+
+name:                refal-llvm
+version:             0.1.0.0
+synopsis:            LLVM-based Refal compiler using C API.
+description:         Compiler for Refal language using LLVM backend through C API.
+license:             BSD-3-Clause
+author:              Your Name
+category:            Compiler
+build-type:          Simple
+extra-source-files:  README.md
+
+executable refal-llvm
+  hs-source-dirs:      src
+  main-is:             Main.hs
+  default-language:    Haskell2010
+  ghc-options:         -Wall
+  cc-options:          -I/opt/homebrew/opt/llvm/include
+  ld-options:          -L/opt/homebrew/opt/llvm/lib -lLLVM -arch arm64
+  build-depends:
+      base >= 4.14 && < 5,
+      text,
+      containers,
+      bytestring,
+      parsec

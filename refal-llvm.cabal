@@ -24,3 +24,7 @@ executable refal-llvm
       containers,
       bytestring,
       parsec
+  other-modules:       AST
+                     , Codegen
+                     , Lexer
+                     , Parser

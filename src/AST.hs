@@ -17,6 +17,8 @@ data Expr
     | Cast Type Expr        -- Приведение типа
     | IndexOp Expr Expr    -- Операция индексации
     | MemOp MemoryOp       -- Операции с памятью
+    | Return Expr  -- Добавляем конструктор Return
+    | BinOp Op Expr Expr  -- Add this constructor
     deriving (Show, Eq)
 
 -- Типы данных

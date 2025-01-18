@@ -4,7 +4,7 @@ module Codegen where
 
 import Foreign.C.String
 import Foreign.Ptr
-import Foreign.C.Types (CUInt(..), CLLong(..), CChar, CInt(..))
+import Foreign.C.Types (CUInt(..), CLLong(..), CChar)
 import AST -- Добавляем импорт модуля AST
 
 -- Функция для создания LLVM модуля
@@ -41,7 +41,7 @@ foreign import ccall "LLVMPositionBuilderAtEnd"
 
 -- Функция для записи модуля в файл биткода
 foreign import ccall "LLVMWriteBitcodeToFile"
-    llvmWriteBitcodeToFile :: Ptr () -> CString -> IO CInt
+    llvmWriteBitcodeToFile :: Ptr () -> CString -> IO ()
 
 -- Функция для печати модуля в строку
 foreign import ccall "LLVMPrintModuleToString"
@@ -51,22 +51,17 @@ foreign import ccall "LLVMPrintModuleToString"
 foreign import ccall "LLVMVectorType"
     llvmVectorType :: Ptr () -> CUInt -> IO (Ptr ())
 
--- Операция сложения двух векторов
-vectAdd :: Ptr () -> Ptr () -> IO (Ptr ())
-vectAdd _ _ = do
-    -- Эта функция будет использовать операцию сложения для векторов
-    -- Здесь мы просто создаём синтетическую операцию (для простоты)
-    putStrLn "Performing vector addition..."
-    return nullPtr  -- заменить на реальную операцию сложения векторов
-
--- Добавляем новые импорты для очистки ресурсов
-foreign import ccall "LLVMDisposeBuilder"
-    llvmDisposeBuilder :: Ptr () -> IO ()
-
+-- Добавляем импорт функции для освобождения памяти модуля
 foreign import ccall "LLVMDisposeModule"
     llvmDisposeModule :: Ptr () -> IO ()
 
--- Обновляем функцию addMainFunction
+-- Операция сложения двух векторов
+vectAdd :: Ptr () -> Ptr () -> IO (Ptr ())
+vectAdd _ _ = do
+    putStrLn "Performing vector addition..."
+    return nullPtr
+
+-- Добавляем функцию с возвратом i32
 addMainFunction :: Ptr () -> IO ()
 addMainFunction llvmModule = do
     putStrLn "Creating i32 type..."
@@ -90,19 +85,15 @@ addMainFunction llvmModule = do
             builder <- llvmCreateBuilder
             if builder == nullPtr
                 then error "Failed to create builder"
-                else do
-                    putStrLn "Builder created"
-                    llvmPositionBuilderAtEnd builder block
-                    putStrLn "Builder positioned at end of block"
+                else putStrLn "Builder created"
 
-                    zero <- llvmConstInt i32 (CLLong 0) (CUInt 0)
-                    if zero == nullPtr
-                        then do
-                            llvmDisposeBuilder builder
-                            error "Failed to create constant zero"
-                        else do
-                            putStrLn "Constant zero created"
-                            retVal <- llvmBuildRet builder zero
-                            putStrLn "Return instruction created"
-                            llvmDisposeBuilder builder
-                            return ()
+            llvmPositionBuilderAtEnd builder block
+            putStrLn "Builder positioned at end of block"
+
+            zero <- llvmConstInt i32 (CLLong 0) (CUInt 0)
+            if zero == nullPtr
+                then error "Failed to create constant zero"
+                else putStrLn "Constant zero created"
+
+            llvmBuildRet builder zero
+            putStrLn "Return instruction created"

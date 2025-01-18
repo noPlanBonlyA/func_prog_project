@@ -71,11 +71,37 @@ parseFunction = debugParser "function" $ do
     body <- Tok.braces lexer (many parseExpr)
     return $ Function name args body
 
--- Парсер для выражений
+-- Добавляем парсер для return
+parseReturn :: Parser Expr
+parseReturn = debugParser "return" $ do
+    reserved "return"
+    expr <- parseExpr
+    return $ Return expr
+
+-- Определяем таблицу операторов
+operators :: [[Ex.Operator String () Identity Expr]]
+operators = [
+    [ binary "*" (BinOp Times) Ex.AssocLeft
+    , binary "/" (BinOp Divide) Ex.AssocLeft
+    ],
+    [ binary "+" (BinOp Plus) Ex.AssocLeft
+    , binary "-" (BinOp Minus) Ex.AssocLeft
+    ]
+    ]
+
+-- Вспомогательная функция для создания бинарного оператора
+binary :: String -> (Expr -> Expr -> Expr) -> Ex.Assoc -> Ex.Operator String () Identity Expr
+binary name f assoc = Ex.Infix (reservedOp name >> return f) assoc
+
+-- Обновляем parseExpr для поддержки операторов
 parseExpr :: Parser Expr
-parseExpr = debugParser "expression" $ choice [
+parseExpr = Ex.buildExpressionParser operators parseTerm
+
+parseTerm :: Parser Expr
+parseTerm = choice [
     try parseFunction,
     try parseDefVar,
+    try parseReturn,
     try parseNumber,
     try parseVariable,
     parens parseExpr

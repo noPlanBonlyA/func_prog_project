@@ -1,23 +1,37 @@
-module Lexer where
+module Lexer (
+    lexer,
+    parens,
+    identifier,
+    reserved,
+    reservedOp,
+    int',
+    commaSep,
+    braces,
+    decimal',
+    angles
+) where
 
-import Text.Parsec
 import Text.Parsec.String (Parser)
-import Text.Parsec.Token as Tok
 import Text.Parsec.Language (emptyDef)
+import qualified Text.Parsec.Token as Tok
 
--- Лексер
 lexer :: Tok.TokenParser ()
 lexer = Tok.makeTokenParser style
   where
     style = emptyDef {
         Tok.commentLine = "//",
-        Tok.reservedOpNames = ["+", "-", "*", "/", "<", ">", "=", ":", ",", "(", ")", "{", "}"],
-        Tok.reservedNames = ["func", "if", "else", "while", "for", "i32", "u32", "i16", "u16", "float", "double"]
+        Tok.reservedOpNames = ["+", "*", "-", "/", "=", ":", "(", ")", "{", "}", "<", ">", ",", "[", "]"],
+        Tok.reservedNames = ["func", "if", "else", "while", "return", "vec", "i32", "u32", "i16", "u16", "float", "double"]
     }
 
--- Простые парсеры для базовых лексем
 parens :: Parser a -> Parser a
 parens = Tok.parens lexer
+
+braces :: Parser a -> Parser a
+braces = Tok.braces lexer
+
+angles :: Parser a -> Parser a
+angles = Tok.angles lexer
 
 identifier :: Parser String
 identifier = Tok.identifier lexer
@@ -28,14 +42,11 @@ reserved = Tok.reserved lexer
 reservedOp :: String -> Parser ()
 reservedOp = Tok.reservedOp lexer
 
-integer :: Parser Integer
-integer = Tok.integer lexer
+int' :: Parser Integer
+int' = Tok.integer lexer
 
-float :: Parser Double
-float = Tok.float lexer
+decimal' :: Parser Double
+decimal' = Tok.float lexer
 
 commaSep :: Parser a -> Parser [a]
 commaSep = Tok.commaSep lexer
-
--- Пример использования лексера:
--- parseExpr, parseFunction, etc. в вашем парсере

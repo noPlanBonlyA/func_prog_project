@@ -42,12 +42,12 @@ getBinDir, getLibDir, getDynLibDir, getDataDir, getLibexecDir, getSysconfDir :: 
 
 
 bindir, libdir, dynlibdir, datadir, libexecdir, sysconfdir :: FilePath
-bindir     = "/Users/noplana/Desktop/ /sem5/\1060\1055/\1087\1088\1086\1077\1082\1090/refal-llvm/.stack-work/install/aarch64-osx/51147ab1c5affd103697ab15e8d6e4d1961dcb97f8d60a715edb6b1b99e94353/9.2.7/bin"
-libdir     = "/Users/noplana/Desktop/ /sem5/\1060\1055/\1087\1088\1086\1077\1082\1090/refal-llvm/.stack-work/install/aarch64-osx/51147ab1c5affd103697ab15e8d6e4d1961dcb97f8d60a715edb6b1b99e94353/9.2.7/lib/aarch64-osx-ghc-9.2.7/refal-llvm-0.1.0.0-4IISHWsaqPG8ixUMi85yZh-refal-llvm"
-dynlibdir  = "/Users/noplana/Desktop/ /sem5/\1060\1055/\1087\1088\1086\1077\1082\1090/refal-llvm/.stack-work/install/aarch64-osx/51147ab1c5affd103697ab15e8d6e4d1961dcb97f8d60a715edb6b1b99e94353/9.2.7/lib/aarch64-osx-ghc-9.2.7"
-datadir    = "/Users/noplana/Desktop/ /sem5/\1060\1055/\1087\1088\1086\1077\1082\1090/refal-llvm/.stack-work/install/aarch64-osx/51147ab1c5affd103697ab15e8d6e4d1961dcb97f8d60a715edb6b1b99e94353/9.2.7/share/aarch64-osx-ghc-9.2.7/refal-llvm-0.1.0.0"
-libexecdir = "/Users/noplana/Desktop/ /sem5/\1060\1055/\1087\1088\1086\1077\1082\1090/refal-llvm/.stack-work/install/aarch64-osx/51147ab1c5affd103697ab15e8d6e4d1961dcb97f8d60a715edb6b1b99e94353/9.2.7/libexec/aarch64-osx-ghc-9.2.7/refal-llvm-0.1.0.0"
-sysconfdir = "/Users/noplana/Desktop/ /sem5/\1060\1055/\1087\1088\1086\1077\1082\1090/refal-llvm/.stack-work/install/aarch64-osx/51147ab1c5affd103697ab15e8d6e4d1961dcb97f8d60a715edb6b1b99e94353/9.2.7/etc"
+bindir     = "/Users/noplana/Desktop/ /sem5/\1060\1055/\1087\1088\1086\1077\1082\1090/refal-llvm/.stack-work/install/aarch64-osx/28f3f2fef0328bba80b9aa55712ad75fb715e1ad6848053028f33a80c697e569/9.2.7/bin"
+libdir     = "/Users/noplana/Desktop/ /sem5/\1060\1055/\1087\1088\1086\1077\1082\1090/refal-llvm/.stack-work/install/aarch64-osx/28f3f2fef0328bba80b9aa55712ad75fb715e1ad6848053028f33a80c697e569/9.2.7/lib/aarch64-osx-ghc-9.2.7/refal-llvm-0.1.0.0-LgOvPAONXO29RygfgWBshI-refal-llvm"
+dynlibdir  = "/Users/noplana/Desktop/ /sem5/\1060\1055/\1087\1088\1086\1077\1082\1090/refal-llvm/.stack-work/install/aarch64-osx/28f3f2fef0328bba80b9aa55712ad75fb715e1ad6848053028f33a80c697e569/9.2.7/lib/aarch64-osx-ghc-9.2.7"
+datadir    = "/Users/noplana/Desktop/ /sem5/\1060\1055/\1087\1088\1086\1077\1082\1090/refal-llvm/.stack-work/install/aarch64-osx/28f3f2fef0328bba80b9aa55712ad75fb715e1ad6848053028f33a80c697e569/9.2.7/share/aarch64-osx-ghc-9.2.7/refal-llvm-0.1.0.0"
+libexecdir = "/Users/noplana/Desktop/ /sem5/\1060\1055/\1087\1088\1086\1077\1082\1090/refal-llvm/.stack-work/install/aarch64-osx/28f3f2fef0328bba80b9aa55712ad75fb715e1ad6848053028f33a80c697e569/9.2.7/libexec/aarch64-osx-ghc-9.2.7/refal-llvm-0.1.0.0"
+sysconfdir = "/Users/noplana/Desktop/ /sem5/\1060\1055/\1087\1088\1086\1077\1082\1090/refal-llvm/.stack-work/install/aarch64-osx/28f3f2fef0328bba80b9aa55712ad75fb715e1ad6848053028f33a80c697e569/9.2.7/etc"
 
 getBinDir     = catchIO (getEnv "refal_llvm_bindir")     (\_ -> return bindir)
 getLibDir     = catchIO (getEnv "refal_llvm_libdir")     (\_ -> return libdir)

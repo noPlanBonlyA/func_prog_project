@@ -46,14 +46,19 @@ main = do
     
     putStrLn $ "Attempting to read from " ++ inputFile ++ "..."
     
-    parseResult <- parseFromFile parseExpr inputFile
-    case parseResult of
+    content <- readFile inputFile
+    putStrLn "File content:"
+    putStrLn content
+    putStrLn "Starting parsing..."
+    
+    case parse parseProgram inputFile content of
         Left err -> do
             putStrLn "=== Parsing Error ==="
             print err
             putStrLn "===================="
             
         Right ast -> do
+            putStrLn "Parsing successful!"
             putStrLn $ formatAST ast
             saveToFile astFile (formatAST ast)
 

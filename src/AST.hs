@@ -6,7 +6,7 @@ type Name = String
 data Expr
     = Variable Name        -- Переменная
     | Number Int           -- Число
-    | Function Name [Expr] -- Определение функции
+    | Function Name [Expr] [Expr]  -- Имя, аргументы, тело функции
     | Call Name [Expr]     -- Вызов функции
     | VectAdd Expr Expr    -- Сложение двух векторов
     | VectMul Expr Expr    -- Умножение двух векторов (или скалярное произведение)

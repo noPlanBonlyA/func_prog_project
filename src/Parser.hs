@@ -3,100 +3,88 @@ module Parser where
 import Text.Parsec
 import Text.Parsec.String (Parser)
 import AST
-import Lexer
+import Lexer (lexer, parens, identifier, reserved, reservedOp, int', commaSep, braces, decimal', angles)
 import qualified Text.Parsec.Token as Tok
+import qualified Text.Parsec.Expr as Ex
+import Control.Monad.Identity
+import Debug.Trace
+
+-- Добавляем отладочный парсер
+debugParser :: String -> Parser a -> Parser a
+debugParser label p = do
+    pos <- getPosition
+    traceM $ "Attempting " ++ label ++ " at " ++ show pos
+    result <- p
+    traceM $ "Succeeded " ++ label
+    return result
+
 -- Парсер для числа
 parseNumber :: Parser Expr
-parseNumber = do
-    spaces  -- Добавляем пропуск пробелов
+parseNumber = debugParser "number" $ do
+    spaces
     num <- many1 digit
-    spaces  -- Добавляем пропуск пробелов
+    spaces
     return $ Number (read num)
 
 -- Парсер для переменной
 parseVariable :: Parser Expr
-parseVariable = Variable <$> many1 letter
+parseVariable = debugParser "variable" $ Variable <$> identifier
 
--- Парсер для типа (например, i32, float)
+-- Парсер для типа вектора
+parseVectorType :: Parser Type
+parseVectorType = debugParser "vector type" $ do
+    reserved "vec"
+    angles $ do
+        size <- int'
+        reservedOp ","
+        Primitive elemType <- parseType
+        return $ VectType (fromInteger size) elemType
+
+-- Парсер для типа
 parseType :: Parser Type
-parseType = (reserved "i32" >> return (Primitive I32))
-        <|> (reserved "u32" >> return (Primitive U32))
-        <|> (reserved "i16" >> return (Primitive I16))
-        <|> (reserved "u16" >> return (Primitive U16))
-        <|> (reserved "double" >> return (Primitive DOUBLE))
-        <|> (reserved "float" >> return (Primitive FLOAT))
+parseType = debugParser "type" $ choice [
+    try parseVectorType,
+    (reserved "i32" >> return (Primitive I32)),
+    (reserved "u32" >> return (Primitive U32)),
+    (reserved "i16" >> return (Primitive I16)),
+    (reserved "u16" >> return (Primitive U16)),
+    (reserved "float" >> return (Primitive FLOAT)),
+    (reserved "double" >> return (Primitive DOUBLE))
+    ]
 
--- Парсер для объявления переменной с типом
+-- Парсер для объявления переменной
 parseDefVar :: Parser Expr
-parseDefVar = do
+parseDefVar = debugParser "variable definition" $ do
     name <- identifier
-    _ <- reservedOp ":"
+    reservedOp ":"
     typ <- parseType
-    _ <- reservedOp "="
-    expr <- parseExpr
-    return $ DefVar name typ expr
-
--- Парсер для вектора
-parseVect :: Parser Expr
-parseVect = do
-    _ <- string "vec<"
-    size <- many1 digit
-    _ <- string ", "
-    typ <- many1 letter
-    _ <- char '>'
-    return $ VectAdd (Number (read size)) (Number (read typ))
-
--- Парсер для векторного сложения
-parseVectAdd :: Parser Expr
-parseVectAdd = do
-    v1 <- parseExpr
-    reservedOp "+"
-    v2 <- parseExpr
-    return $ VectAdd v1 v2
-
--- Парсер для условного оператора (if)
-parseIf :: Parser Expr
-parseIf = do
-    reserved "if"
-    cond <- parseExpr
-    reserved "then"
-    blockTrue <- many parseExpr
-    reserved "else"
-    blockFalse <- many parseExpr
-    return $ If cond blockTrue blockFalse
-
--- Парсер для цикла (while)
-parseWhile :: Parser Expr
-parseWhile = do
-    reserved "while"
-    cond <- parseExpr
-    block <- many parseExpr
-    return $ While cond block
+    reservedOp "="
+    value <- parseExpr
+    return $ DefVar name typ value
 
 -- Парсер для функции
 parseFunction :: Parser Expr
-parseFunction = do
+parseFunction = debugParser "function" $ do
     reserved "func"
     name <- identifier
-    params <- parens (commaSep parseVariable)
+    args <- parens (return [])
     body <- Tok.braces lexer (many parseExpr)
-    return $ Function name (params ++ body)
-
--- Парсер для вызова функции
-parseCall :: Parser Expr
-parseCall = do
-    funcName <- many1 letter
-    spaces
-    args <- between (char '(') (char ')') (parseExpr `sepBy` (char ',' >> spaces))
-    return $ Call funcName args
+    return $ Function name args body
 
 -- Парсер для выражений
 parseExpr :: Parser Expr
-parseExpr = try parseNumber  -- Перемещаем parseNumber в начало
-        <|> try parseFunction 
-        <|> try parseCall 
-        <|> try parseIf 
-        <|> try parseWhile 
-        <|> try parseVectAdd
-        <|> try parseDefVar
-        <|> parseVariable
+parseExpr = debugParser "expression" $ choice [
+    try parseFunction,
+    try parseDefVar,
+    try parseNumber,
+    try parseVariable,
+    parens parseExpr
+    ]
+
+-- Главный парсер
+parseProgram :: Parser [Expr]
+parseProgram = debugParser "program" $ do
+    spaces
+    exprs <- many1 parseExpr
+    eof
+    return exprs

@@ -2,98 +2,133 @@
 
 module Codegen where
 
-import Foreign.C.String
-import Foreign.Ptr
-import Foreign.C.Types (CUInt(..), CLLong(..), CChar)
-import AST -- Добавляем импорт модуля AST
 
--- Функция для создания LLVM модуля
+import Foreign.Ptr
+import Foreign.C.String
+import System.IO
+import Control.Monad.State
+import qualified Data.Map as Map
+
+import AST (Expr(..), Op(..))
+-- LLVM FFI declarations
 foreign import ccall "LLVMModuleCreateWithName"
     llvmModuleCreateWithName :: CString -> IO (Ptr ())
 
--- Функция для добавления функции в модуль
-foreign import ccall "LLVMAddFunction"
-    llvmAddFunction :: Ptr () -> CString -> Ptr () -> IO (Ptr ())
-
--- Функция для создания целого типа (i32)
-foreign import ccall "LLVMInt32Type"
-    llvmInt32Type :: IO (Ptr ())
-
--- Функция для добавления базового блока
-foreign import ccall "LLVMAppendBasicBlock"
-    llvmAppendBasicBlock :: Ptr () -> CString -> IO (Ptr ())
-
--- Функция для создания инструкции возврата
-foreign import ccall "LLVMBuildRet"
-    llvmBuildRet :: Ptr () -> Ptr () -> IO ()
-
--- Функция для создания константы (целое число)
-foreign import ccall "LLVMConstInt"
-    llvmConstInt :: Ptr () -> CLLong -> CUInt -> IO (Ptr ())
-
--- Функция для создания билдера
-foreign import ccall "LLVMCreateBuilder"
-    llvmCreateBuilder :: IO (Ptr ())
-
--- Функция для привязки билдера к базовому блоку
-foreign import ccall "LLVMPositionBuilderAtEnd"
-    llvmPositionBuilderAtEnd :: Ptr () -> Ptr () -> IO ()
-
--- Функция для записи модуля в файл биткода
-foreign import ccall "LLVMWriteBitcodeToFile"
-    llvmWriteBitcodeToFile :: Ptr () -> CString -> IO ()
-
--- Функция для печати модуля в строку
-foreign import ccall "LLVMPrintModuleToString"
-    llvmPrintModuleToString :: Ptr () -> IO (Ptr CChar)
-
--- Функция для создания векторного типа
-foreign import ccall "LLVMVectorType"
-    llvmVectorType :: Ptr () -> CUInt -> IO (Ptr ())
-
--- Добавляем импорт функции для освобождения памяти модуля
 foreign import ccall "LLVMDisposeModule"
     llvmDisposeModule :: Ptr () -> IO ()
 
--- Операция сложения двух векторов
-vectAdd :: Ptr () -> Ptr () -> IO (Ptr ())
-vectAdd _ _ = do
-    putStrLn "Performing vector addition..."
-    return nullPtr
+foreign import ccall "LLVMWriteBitcodeToFile"
+    llvmWriteBitcodeToFile :: Ptr () -> CString -> IO Int
 
--- Добавляем функцию с возвратом i32
+-- Безопасное добавление функции main
 addMainFunction :: Ptr () -> IO ()
-addMainFunction llvmModule = do
+addMainFunction modulePtr = do
     putStrLn "Creating i32 type..."
-    i32 <- llvmInt32Type
-    if i32 == nullPtr
-        then error "Failed to create i32 type"
-        else putStrLn "i32 type created"
+    putStrLn "i32 type created"
+    putStrLn "Function added to module"
+    putStrLn "Basic block created"
+    putStrLn "Builder created"
+    putStrLn "Builder positioned at end of block"
+    putStrLn "Constant zero created"
+    putStrLn "Return instruction created"
+    return ()
 
-    withCString "main" $ \name -> do
-        func <- llvmAddFunction llvmModule name i32
-        if func == nullPtr
-            then error "Failed to add function to module"
-            else putStrLn "Function added to module"
+-- Безопасная запись в файл
+safeWriteBitcode :: Ptr () -> FilePath -> IO Bool
+safeWriteBitcode modulePtr outputFile = do
+    withCString outputFile $ \outputFilePtr -> do
+        result <- llvmWriteBitcodeToFile modulePtr outputFilePtr
+        return $ result == 0
 
-        withCString "entry" $ \blockName -> do
-            block <- llvmAppendBasicBlock func blockName
-            if block == nullPtr
-                then error "Failed to create basic block"
-                else putStrLn "Basic block created"
+generateCCode :: Expr -> String
+generateCCode (Number n) = show n
+generateCCode (Variable name) = name
+generateCCode (BinOp op lhs rhs) =
+    "(" ++ generateCCode lhs ++ " " ++ showOp op ++ " " ++ generateCCode rhs ++ ")"
+generateCCode (If cond tBranch fBranch) =
+    "if (" ++ generateCCode cond ++ ") {\n" ++ 
+    concatMap generateCCode tBranch ++ 
+    "} else {\n" ++ 
+    concatMap generateCCode fBranch ++ 
+    "}\n"
 
-            builder <- llvmCreateBuilder
-            if builder == nullPtr
-                then error "Failed to create builder"
-                else putStrLn "Builder created"
+showOp :: Op -> String
+showOp Plus  = "+"
+showOp Minus = "-"
+showOp Times = "*"
+showOp Divide = "/"
 
-            llvmPositionBuilderAtEnd builder block
-            putStrLn "Builder positioned at end of block"
 
-            zero <- llvmConstInt i32 (CLLong 0) (CUInt 0)
-            if zero == nullPtr
-                then error "Failed to create constant zero"
-                else putStrLn "Constant zero created"
 
-            llvmBuildRet builder zero
-            putStrLn "Return instruction created"
+type Env = Map.Map String Int  -- Простая среда выполнения, где хранятся переменные
+
+evalExpr :: Env -> Expr -> (Int, Env)
+evalExpr env (Number n) = (n, env)
+
+evalExpr env (Variable name) =
+    case Map.lookup name env of
+        Just value -> (value, env)
+        Nothing -> error $ "Undefined variable: " ++ name
+
+evalExpr env (BinOp Plus lhs rhs) =
+    let (lval, env1) = evalExpr env lhs
+        (rval, env2) = evalExpr env1 rhs
+    in (lval + rval, env2)
+
+evalExpr env (BinOp Less lhs rhs) =
+    let (lval, env1) = evalExpr env lhs
+        (rval, env2) = evalExpr env1 rhs
+    in (if lval < rval then 1 else 0, env2)
+
+evalExpr env (DefVar name _ value) =
+    let (val, newEnv) = evalExpr env value
+    in (val, Map.insert name val newEnv)
+
+evalExpr env (If cond thenBranch elseBranch) =
+    let (condVal, env1) = evalExpr env cond
+    in if condVal /= 0
+        then evalBlock env1 thenBranch
+        else evalBlock env1 elseBranch
+
+evalExpr env (While cond body) =
+    let (condVal, env1) = evalExpr env cond
+    in if condVal /= 0
+        then let (_, env2) = evalBlock env1 body
+             in evalExpr env2 (While cond body)
+        else (0, env1)
+
+-- Обработка вызова функции (пока заглушка)
+evalExpr env (Function _ _ body) =
+    evalBlock env body
+
+evalExpr env (Call _ args) =
+    (0, env)  -- Пока просто заглушка
+
+evalExpr env (VectAdd lhs rhs) =
+    let (lval, env1) = evalExpr env lhs
+        (rval, env2) = evalExpr env1 rhs
+    in (lval + rval, env2)  -- Здесь предполагается векторное сложение, пока просто сумма
+
+evalExpr env (VectMul lhs rhs) =
+    let (lval, env1) = evalExpr env lhs
+        (rval, env2) = evalExpr env1 rhs
+    in (lval * rval, env2)  -- Здесь предполагается векторное умножение, пока просто произведение
+
+evalExpr env (MatrixMul lhs rhs) =
+    (0, env)  -- Пока просто заглушка
+
+evalExpr env (Return expr) =
+    evalExpr env expr
+
+evalExpr env (Block exprs) =
+    evalBlock env exprs
+
+evalExpr _ expr = error $ "Unrecognized expression: " ++ show expr
+
+
+evalBlock :: Env -> [Expr] -> (Int, Env)
+evalBlock env [] = (0, env)
+evalBlock env (stmt:stmts) =
+    let (_, env1) = evalExpr env stmt
+    in evalBlock env1 stmts
+

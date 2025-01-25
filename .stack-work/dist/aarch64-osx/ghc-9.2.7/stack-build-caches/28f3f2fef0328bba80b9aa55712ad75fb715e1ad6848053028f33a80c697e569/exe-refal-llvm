@@ -3,12 +3,12 @@
 /Users/noplana/Desktop/ /sem5/ФП/проект/refal-llvm/refal-llvm.cabal:
   hash: 19ac6cb3141eb0a17a51a4e503baa5e2ad5b0bbab8e79d4bb609324d2435518f
 /Users/noplana/Desktop/ /sem5/ФП/проект/refal-llvm/src/AST.hs:
-  hash: 084d1ca88d11d7a431c917b83909a00dc54c427e3ea1ac69c6c74b2ec0899f1f
+  hash: ab26e4d8b42f9659cd92b56f0fe65241a2faedc0bc904f0c636b67a9ab1cd55c
 /Users/noplana/Desktop/ /sem5/ФП/проект/refal-llvm/src/Codegen.hs:
-  hash: 42a80d4bb8787840aa5f156de814d0ac00d565b59d5bc651a9bb50077fce7ff9
+  hash: c9a8dd1a384bcd5e65d1a50cbe74de401d96b459e923c6e7452bc107f4f54811
 /Users/noplana/Desktop/ /sem5/ФП/проект/refal-llvm/src/Lexer.hs:
   hash: e49d034a7b3211edab27dcd2f780ee9c9f3785943c88aef4ea097bd7d99137fe
 /Users/noplana/Desktop/ /sem5/ФП/проект/refal-llvm/src/Main.hs:
-  hash: f1d377bba05c639737031eebfda6828a0f80fc0b55af94b2430368b558706d92
+  hash: 456fb40912895dc8468e599830b04fccb8d2312ae4c565963b642319f8c5a5a9
 /Users/noplana/Desktop/ /sem5/ФП/проект/refal-llvm/src/Parser.hs:
-  hash: 21b6500bd72bad906f9b0e7ac8e7788243cca775e392baa049087ff001db76f6
+  hash: ebc39bcf61eb19da7c2512c24a30361adb2baa9c667cfe9d2d5b09668cb0f0e4

@@ -35,16 +35,23 @@ main = do
             -- Генерация LLVM IR
             withCString "module" $ \moduleName -> do
                 llvmModule <- llvmModuleCreateWithName moduleName
+                
+                -- Безопасное добавление функции
                 addMainFunction llvmModule
                 
-                -- Сохранение в файл
-                withCString (inputFile ++ ".ll") $ \outputFile -> do
-                    llvmWriteBitcodeToFile llvmModule outputFile
-                    putStrLn "✅ LLVM IR generation completed!"
-                    putStrLn "\n✨ Compilation completed successfully!"
-                    putStrLn "\nGenerated files:"
-                    putStrLn $ "  📄 " ++ astOutput
-                    putStrLn $ "  📄 " ++ inputFile ++ ".ll"
-                    
+                -- Безопасная запись в файл
+                result <- safeWriteBitcode llvmModule (inputFile ++ ".ll")
+                
                 -- Освобождение памяти
                 llvmDisposeModule llvmModule
+                
+                if result
+                    then do
+                        putStrLn "✅ LLVM IR generation completed!"
+                        putStrLn "\n✨ Compilation completed successfully!"
+                        putStrLn "\nGenerated files:"
+                        putStrLn $ "  📄 " ++ astOutput
+                        putStrLn $ "  📄 " ++ inputFile ++ ".ll"
+                    else do
+                        putStrLn "❌ Failed to write LLVM bitcode"
+                        putStrLn "Please check file permissions and path"

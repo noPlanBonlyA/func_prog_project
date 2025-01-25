@@ -9,7 +9,11 @@ import qualified Text.Parsec.Expr as Ex
 import Control.Monad.Identity
 import Debug.Trace
 
--- Добавляем отладочный парсер
+
+
+
+
+-- Отладочный парсер
 debugParser :: String -> Parser a -> Parser a
 debugParser label p = do
     pos <- getPosition
@@ -18,7 +22,7 @@ debugParser label p = do
     traceM $ "Succeeded " ++ label
     return result
 
--- Парсер для числа
+-- Парсер числа
 parseNumber :: Parser Expr
 parseNumber = debugParser "number" $ do
     spaces
@@ -26,24 +30,13 @@ parseNumber = debugParser "number" $ do
     spaces
     return $ Number (read num)
 
--- Парсер для переменной
+-- Парсер переменной
 parseVariable :: Parser Expr
 parseVariable = debugParser "variable" $ Variable <$> identifier
 
--- Парсер для типа вектора
-parseVectorType :: Parser Type
-parseVectorType = debugParser "vector type" $ do
-    reserved "vec"
-    angles $ do
-        size <- int'
-        reservedOp ","
-        Primitive elemType <- parseType
-        return $ VectType (fromInteger size) elemType
-
--- Парсер для типа
+-- Парсер типа
 parseType :: Parser Type
 parseType = debugParser "type" $ choice [
-    try parseVectorType,
     (reserved "i32" >> return (Primitive I32)),
     (reserved "u32" >> return (Primitive U32)),
     (reserved "i16" >> return (Primitive I16)),
@@ -52,7 +45,7 @@ parseType = debugParser "type" $ choice [
     (reserved "double" >> return (Primitive DOUBLE))
     ]
 
--- Парсер для объявления переменной
+-- Парсер объявления переменной
 parseDefVar :: Parser Expr
 parseDefVar = debugParser "variable definition" $ do
     name <- identifier
@@ -62,55 +55,95 @@ parseDefVar = debugParser "variable definition" $ do
     value <- parseExpr
     return $ DefVar name typ value
 
--- Парсер для функции
+
+-- Парсер условного оператора
+parseIf :: Parser Expr
+parseIf = do
+    reserved "if"
+    cond <- parens parseExpr <|> parseExpr -- Позволяем отсутствие скобок
+    trueBranch <- braces (many parseExpr)
+    reserved "else"
+    falseBranch <- braces (many parseExpr)
+    return $ If cond trueBranch falseBranch
+
+
+
+-- Парсер цикла
+parseWhile :: Parser Expr
+parseWhile = debugParser "while" $ do
+    reserved "while"
+    cond <- parens parseExpr <|> parseExpr  -- Позволяем условия без скобок
+    body <- braces (many parseExpr)
+    return $ While cond body
+
+
+-- Парсер функции
 parseFunction :: Parser Expr
 parseFunction = debugParser "function" $ do
     reserved "func"
     name <- identifier
-    args <- parens (return [])
-    body <- Tok.braces lexer (many parseExpr)
-    return $ Function name args body
+    args <- parens (commaSep identifier)
+    body <- braces (many parseExpr)
+    return $ Function name (map Variable args) body
 
--- Добавляем парсер для return
-parseReturn :: Parser Expr
-parseReturn = debugParser "return" $ do
-    reserved "return"
-    expr <- parseExpr
-    return $ Return expr
+-- Таблица операторов
 
--- Определяем таблицу операторов
 operators :: [[Ex.Operator String () Identity Expr]]
-operators = [
-    [ binary "*" (BinOp Times) Ex.AssocLeft
-    , binary "/" (BinOp Divide) Ex.AssocLeft
-    ],
-    [ binary "+" (BinOp Plus) Ex.AssocLeft
-    , binary "-" (BinOp Minus) Ex.AssocLeft
-    ]
+operators =
+    [ [ binary "*" (BinOp Times) Ex.AssocLeft
+      , binary "/" (BinOp Divide) Ex.AssocLeft
+      ]
+    , [ binary "+" (BinOp Plus) Ex.AssocLeft
+      , binary "-" (BinOp Minus) Ex.AssocLeft
+      ]
+    , [ binary "<" (BinOp Less) Ex.AssocLeft
+      , binary ">" (BinOp Greater) Ex.AssocLeft
+      , binary "==" (BinOp Equal) Ex.AssocLeft
+      ]
+    , [ binary "=" (BinOp Assign) Ex.AssocRight ]  -- Добавляем присваивание
+
     ]
 
 -- Вспомогательная функция для создания бинарного оператора
 binary :: String -> (Expr -> Expr -> Expr) -> Ex.Assoc -> Ex.Operator String () Identity Expr
 binary name f assoc = Ex.Infix (reservedOp name >> return f) assoc
 
--- Обновляем parseExpr для поддержки операторов
+-- Парсер выражений
 parseExpr :: Parser Expr
 parseExpr = Ex.buildExpressionParser operators parseTerm
 
+parseAssignment :: Parser Expr
+parseAssignment = debugParser "assignment" $ do
+    varName <- identifier
+    reservedOp "="
+    expr <- parseExpr
+    return $ BinOp Assign (Variable varName) expr
+
 parseTerm :: Parser Expr
 parseTerm = choice [
-    try parseFunction,
+
     try parseDefVar,
+    try parseAssignment, 
+    try parseIf,      -- Добавлено разбор if
+    try parseWhile,
+    try parseFunction,
     try parseReturn,
     try parseNumber,
     try parseVariable,
     parens parseExpr
+    
     ]
 
--- Главный парсер
+-- Главный парсер программы
 parseProgram :: Parser [Expr]
 parseProgram = debugParser "program" $ do
     spaces
     exprs <- many1 parseExpr
     eof
     return exprs
+
+parseReturn :: Parser Expr
+parseReturn = do
+    reserved "return"
+    expr <- parseExpr
+    return $ Return expr

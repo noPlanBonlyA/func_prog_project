@@ -1,1 +1,1 @@
-[Function "main" [] [DefVar "x" (Primitive I32) (Number 10),DefVar "y" (Primitive I32) (Number 20),DefVar "z" (Primitive I32) (BinOp Plus (Variable "x") (Variable "y")),Return (Variable "z")]]
+[Function "main" [] [DefVar "sum" (Primitive I32) (Number 0),DefVar "i" (Primitive I32) (Number 0),While (BinOp Less (Variable "i") (Number 5)) [BinOp Assign (Variable "sum") (BinOp Plus (Variable "sum") (Variable "i")),BinOp Assign (Variable "i") (BinOp Plus (Variable "i") (Number 1))],Return (Variable "sum")]]

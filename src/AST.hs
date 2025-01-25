@@ -18,7 +18,8 @@ data Expr
     | IndexOp Expr Expr    -- Операция индексации
     | MemOp MemoryOp       -- Операции с памятью
     | Return Expr  -- Добавляем конструктор Return
-    | BinOp Op Expr Expr  -- Add this constructor
+    | BinOp Op Expr Expr
+    | Block [Expr]  
     deriving (Show, Eq)
 
 -- Типы данных
@@ -36,10 +37,10 @@ data PrimitiveType = I32 | U32 | I16 | U16 | DOUBLE | FLOAT
 data Op = Plus | Minus | Times | Divide | Assign | 
           Less | Greater | Equal | NotEqual | OR | 
           AND | VectAddOp | VectMulOp | MatrixMulOp  -- Операции для векторов и матриц
-          deriving (Eq, Ord, Show) 
+          deriving (Eq, Ord, Show)
 
 -- Унарные операции
 data UnaryOp = Increment | Decrement | UnMinus deriving (Eq, Ord, Show)
 
 -- Операции с памятью
-data MemoryOp = Load Type Expr Expr | Store Type Expr Expr deriving (Eq, Show) 
+data MemoryOp = Load Type Expr Expr | Store Type Expr Expr deriving (Eq, Show)
